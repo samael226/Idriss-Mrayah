@@ -43,6 +43,12 @@ html, body, #root { height: 100%; }
   100% { transform: scale(1) translate3d(0,0,0); }
 }
 
+/* Subtle glow pulse for panel borders */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(224,75,67,.30) inset; }
+  50% { box-shadow: 0 0 0 1px rgba(224,75,67,.50) inset, 0 0 24px rgba(224,75,67,.08); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }

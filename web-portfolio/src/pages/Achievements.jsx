@@ -15,6 +15,49 @@ export default function Achievements() {
     try { const raw = localStorage.getItem('stats_v1'); if (raw) { const p = JSON.parse(raw); setStats({ level: p.level ?? 48, coins: p.coins ?? 1425, xp: p.xp ?? 0 }) } } catch(e){ void e }
     try { const raw = localStorage.getItem('visual_cfg_v1'); if (raw) { const p = JSON.parse(raw); setVisualCfg({ hue: p.hue ?? 0, hudScale: p.hudScale ?? 1, textScale: p.textScale ?? 100 }) } } catch(e){ void e }
     try { const a = JSON.parse(localStorage.getItem('achievements_v1')||'{}'); if (a) setAchEarned(a) } catch(e){ void e }
+    // Read filters from URL if present
+    try {
+      const sp = new URLSearchParams(window.location.search)
+      const qs = sp.get('q') || ''
+      const st = sp.get('status') || 'all'
+      const rf = sp.get('rarity') // csv
+      if (qs) setQuery(qs)
+      if (st && ['all','achieved','progress','todo'].includes(st)) setStatus(st)
+      if (rf) {
+        const set = rf.split(',').reduce((acc,k)=>{ acc[k]=true; return acc }, {})
+        setRarityFilter({ legendary: !!set.legendary, epic: !!set.epic, rare: !!set.rare, common: !!set.common, uncommon: !!set.uncommon })
+      }
+    } catch(e){ void e }
+  }, [])
+
+  // Sync filters to URL
+  useEffect(() => {
+    try {
+      const on = Object.entries(rarityFilter).filter(([,v])=>v).map(([k])=>k).join(',')
+      const sp = new URLSearchParams(window.location.search)
+      query ? sp.set('q', query) : sp.delete('q')
+      status !== 'all' ? sp.set('status', status) : sp.delete('status')
+      on !== 'legendary,epic,rare,common,uncommon' && on !== '' ? sp.set('rarity', on) : sp.delete('rarity')
+      const url = `${window.location.pathname}?${sp.toString()}`.replace(/\?$/, '')
+      window.history.replaceState({}, '', url)
+    } catch(e){ void e }
+  }, [query, status, rarityFilter])
+
+  // Shortcuts: F focus search, 1/2/3 switch status
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return
+      if (e.key.toLowerCase() === 'f') {
+        const el = document.querySelector('#ach-search')
+        el?.focus(); e.preventDefault()
+      }
+      if (e.key === '1') setStatus('all')
+      if (e.key === '2') setStatus('achieved')
+      if (e.key === '3') setStatus('progress')
+      if (e.key === '4') setStatus('todo')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   const computed = useMemo(() => {
@@ -84,7 +127,12 @@ export default function Achievements() {
         <main className="relative rounded-md border border-white/15 bg-black/20 backdrop-blur-sm overflow-hidden">
           <span className="pointer-events-none absolute -inset-px rounded-md opacity-40 [background:radial-gradient(600px_300px_at_20%_20%,rgba(255,255,255,.06),transparent_60%)]" />
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-black/40 px-4 py-2 text-[11px] uppercase tracking-[0.25em] text-neutral-300 backdrop-blur">
-            <div className="flex-1 text-center">Achievements</div>
+            <div className="flex-1 text-center">
+              Achievements
+              <span className="ml-3 text-[10px] tracking-[0.2em] text-neutral-400">(
+                <span style={{ color: 'var(--accent)' }}>{computed.earned.length}</span> / {computed.items.length}
+              )</span>
+            </div>
             <div className="hidden md:flex items-center gap-3 pr-1">
               <span className="inline-flex items-center gap-1"><i className="h-2 w-2 rounded-sm bg-yellow-500/60" /> Achieved</span>
               <span className="inline-flex items-center gap-1"><i className="h-2 w-2 rounded-sm bg-fuchsia-500/60" /> In Progress</span>
@@ -126,7 +174,7 @@ export default function Achievements() {
           <div className="relative rounded-md border border-white/15 bg-black/40 p-4 text-xs">
             <div className="uppercase tracking-[0.25em] text-neutral-400">Filters</div>
             <div className="mt-3">
-              <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search achievements" className="w-full rounded-sm border border-white/10 bg-black/40 px-2 py-1 text-xs outline-none focus:border-white/20" />
+              <input id="ach-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search achievements (F)" className="w-full rounded-sm border border-white/10 bg-black/40 px-2 py-1 text-xs outline-none focus:border-white/20" />
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
               {['legendary','epic','rare','common','uncommon'].map(r => (
@@ -139,6 +187,9 @@ export default function Achievements() {
               ].map(s=> (
                 <button key={s.k} onClick={()=>setStatus(s.k)} className={`rounded border px-2 py-1 text-center ${status===s.k?'bg-white/10 text-[var(--accent)]':''}`} style={status===s.k?{ borderColor:'color-mix(in srgb, var(--accent) 60%, transparent)' }:{ borderColor:'rgba(255,255,255,.15)' }}>{s.label}</button>
               ))}
+            </div>
+            <div className="mt-3">
+              <button onClick={()=>{ try { navigator.clipboard.writeText(window.location.href) } catch(e){ void e } }} className="w-full rounded-sm border border-white/15 bg-black/30 px-2 py-1 text-[11px] uppercase tracking-[0.2em] hover:bg-white/10">Copy Link</button>
             </div>
           </div>
         </aside>

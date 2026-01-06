@@ -2,8 +2,11 @@ services:
   - type: web
     name: portfolio
     env: node
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
+    buildCommand: |
+      cd web-portfolio
+      npm install
+      npm run build
+    staticPublishPath: ./web-portfolio/dist
     envVars:
       - key: NODE_VERSION
         value: 18.18.0

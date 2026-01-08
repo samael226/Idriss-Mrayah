@@ -1,6 +1,7 @@
 // src/pages/Contact.jsx
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
+import emailjs from '@emailjs/browser';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -8,7 +9,8 @@ const Contact = () => {
     email: '',
     message: ''
   });
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState({ message: '', type: '' });
+  const form = useRef();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,19 +22,35 @@ const Contact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus('Sending...');
+    setStatus({ message: 'Sending...', type: 'info' });
     
-    // TODO: Replace with your form submission logic
     try {
-      // Example: await axios.post('/api/contact', formData);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      setStatus('Message sent successfully!');
-      setFormData({ name: '', email: '', message: '' });
-      setTimeout(() => setStatus(''), 3000);
+      const result = await emailjs.sendForm(
+        'service_zwjz7uo', // Replace with your EmailJS service ID
+        'template_mzn8l2h', // Replace with your EmailJS template ID
+        form.current,
+        'qsxknAzNivqDQqvbw' // Replace with your EmailJS public key
+      );
+      
+      if (result.status === 200) {
+        setStatus({ 
+          message: 'Message sent successfully! I\'ll get back to you soon.', 
+          type: 'success' 
+        });
+        setFormData({ name: '', email: '', message: '' });
+      } else {
+        throw new Error('Failed to send message');
+      }
     } catch (error) {
-console.error('Error submitting form:', error);
-  setStatus(`Failed to send message: ${error.message || 'Please try again.'}`);
+      console.error('Error submitting form:', error);
+      setStatus({ 
+        message: `Failed to send message: ${error.message || 'Please try again later.'}`, 
+        type: 'error' 
+      });
     }
+    
+    // Clear status after 5 seconds
+    setTimeout(() => setStatus({ message: '', type: '' }), 5000);
   };
 
   return (
@@ -69,7 +87,7 @@ console.error('Error submitting form:', error);
                   </div>
                   <div>
                     <h3 className="font-medium">Email</h3>
-                    <p className="text-gray-400">contact@idrissmrayah.com</p>
+                    <p className="text-gray-400">samael01lu@gmail.com</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
@@ -80,7 +98,7 @@ console.error('Error submitting form:', error);
                   </div>
                   <div>
                     <h3 className="font-medium">Phone</h3>
-                    <p className="text-gray-400">+1 (123) 456-7890</p>
+                    <p className="text-gray-400">+21628341756</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
@@ -101,9 +119,9 @@ console.error('Error submitting form:', error);
                 <h2 className="text-2xl font-semibold mb-6 text-[#e04b43]">Connect With Me</h2>
                 <div className="flex space-x-6">
                   {[
-                    { name: 'GitHub', icon: 'github', url: 'https://github.com/yourusername' },
+                    { name: 'GitHub', icon: 'github', url: 'https://github.com/samael226' },
                     { name: 'LinkedIn', icon: 'linkedin', url: 'https://linkedin.com/in/yourusername' },
-                    { name: 'Twitter', icon: 'twitter', url: 'https://twitter.com/yourusername' },
+                    { name: 'Instagram', icon: 'instagram', url: 'https://instagram.com/samael_id007' },
                   ].map((social) => (
                     <a
                       key={social.name}
@@ -129,7 +147,7 @@ console.error('Error submitting form:', error);
             className="bg-[#111113] p-8 rounded-lg shadow-xl"
           >
             <h2 className="text-2xl font-semibold mb-6 text-[#e04b43]">Send Me a Message</h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form ref={form} onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
                   Name
@@ -178,10 +196,10 @@ console.error('Error submitting form:', error);
               <div>
                 <button
                   type="submit"
-                  disabled={status === 'Sending...'}
+                  disabled={status.message === 'Sending...'}
                   className="w-full bg-[#e04b43] hover:bg-[#c53d36] text-white font-medium py-3 px-6 rounded-md transition-colors duration-300 flex items-center justify-center"
                 >
-                  {status === 'Sending...' ? (
+                  {status.message === 'Sending...' ? (
                     <>
                       <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -193,10 +211,10 @@ console.error('Error submitting form:', error);
                     'Send Message'
                   )}
                 </button>
-                {status && status !== 'Sending...' && (
-                  <p className={`mt-2 text-sm text-center ${status.includes('successfully') ? 'text-green-400' : 'text-red-400'}`}>
-                    {status}
-                  </p>
+                {status.message && status.message !== 'Sending...' && (
+                  <div className={`mt-4 p-3 rounded-md ${status.type === 'success' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
+                    {status.message}
+                  </div>
                 )}
               </div>
             </form>

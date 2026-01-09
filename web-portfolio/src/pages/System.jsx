@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
+import emailjs from '@emailjs/browser'
 import DemoVideo from '../assets/videos/momsuca_holographic_FOG_City_space_intricate_meander_Patterns_743c9ca8-0687-493f-9d51-13799ae5bc96_0.mp4'
 import ProfileVideo from '../assets/videos/t3g4_fantasy_illustration_warforged_artificer_he_is_free_fall_4155ceab-c2ac-4d22-bed3-ee376a56b9df_0 (1).mp4'
 import { achievements as ACH } from '../data/achievements.js'
@@ -7,20 +8,17 @@ import { achievements as ACH } from '../data/achievements.js'
 export default function System() {
   const videoRef = useRef(null)
   const [openForm, setOpenForm] = useState(false)
-  const [formType, setFormType] = useState('hire') // 'hire' | 'connect'
   const [openConfig, setOpenConfig] = useState(false)
   const formRef = useRef(null)
   const firstFieldRef = useRef(null)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
-  const [subject, setSubject] = useState('') // connect only
-  const [project, setProject] = useState('') // hire only
-  const [budget, setBudget] = useState('') // hire only
-  const [timeline, setTimeline] = useState('') // hire only
+  // Form state
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [sent, setSent] = useState(false)
+  const [formType, _setFormType] = useState('connect')
   const [activeTab, setActiveTab] = useState('beginning')
   const tabs = [
     { key: 'beginning', label: 'Beginning' },
@@ -187,12 +185,10 @@ export default function System() {
     }
   }, [])
 
-  // Optional: Auto-open via URL hash (#hire or #connect) for quick testing
+  // Optional: Auto-open via URL hash for quick testing
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const h = window.location.hash.toLowerCase()
-      if (h === '#hire') { setFormType('hire'); setOpenForm(true) }
-      if (h === '#connect') { setFormType('connect'); setOpenForm(true) }
+    if (typeof window !== 'undefined' && window.location.hash === '#contact') {
+      setOpenForm(true);
     }
   }, [])
 
@@ -285,60 +281,110 @@ export default function System() {
 
   function validate() {
     const next = {}
-    if (!name.trim()) next.name = 'Required'
-    if (!email.trim()) next.email = 'Required'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'Invalid email'
-    if (!message.trim()) next.message = 'Required'
-    if (formType === 'connect') {
-      if (!subject.trim()) next.subject = 'Required'
-    } else {
-      if (!project.trim()) next.project = 'Required'
-      if (!budget.trim()) next.budget = 'Required'
-      if (!timeline.trim()) next.timeline = 'Required'
+    
+    // Validate name
+    if (!name || !name.trim()) {
+      next.name = 'Name is required'
+      console.log('Validation failed: Name is required')
     }
+    
+    // Validate email
+    if (!email || !email.trim()) {
+      next.email = 'Email is required'
+      console.log('Validation failed: Email is required')
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      next.email = 'Please enter a valid email address'
+      console.log('Validation failed: Invalid email format')
+    }
+    
+    // Validate message
+    if (!message || !message.trim()) {
+      next.message = 'Message is required'
+      console.log('Validation failed: Message is required')
+    }
+    
     setErrors(next)
-    return Object.keys(next).length === 0
+    const isValid = Object.keys(next).length === 0
+    console.log(`Form validation ${isValid ? 'passed' : 'failed'}`)
+    return isValid
   }
 
   async function submitForm() {
-    if (!validate()) return
-    setSubmitting(true)
+    console.log('submitForm called');
+    
+    // Validate form
+    if (!validate()) {
+      console.log('Validation failed');
+      return;
+    }
+    
+    console.log('Setting submitting to true');
+    setSubmitting(true);
+    
     try {
-      const FORMSPREE_ID = '' // optional: paste your Formspree form ID
-      if (FORMSPREE_ID) {
-        const res = await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({
-            type: formType,
-            name,
-            email,
-            message,
-            subject: formType === 'connect' ? subject : undefined,
-            project: formType === 'hire' ? project : undefined,
-            budget: formType === 'hire' ? budget : undefined,
-            timeline: formType === 'hire' ? timeline : undefined,
-          })
-        })
-        if (!res.ok) throw new Error('Submit failed')
+      console.log('Preparing template params');
+      const templateParams = {
+        to_email: 'samael01lu@gmail.com',
+        from_name: name,
+        from_email: email,
+        message: message,
+        subject: `New Message from ${name} (${email})`,
+        reply_to: email,
+        date: new Date().toLocaleString()
+      };
+
+      console.log('Sending email with params:', templateParams);
+      
+      const result = await emailjs.send(
+        'service_zwjz7uo', // Your EmailJS service ID
+        'template_1kvmgq7', // Your EmailJS template ID
+        templateParams,
+        'qsxknAzNivqDQqvbw' // Your EmailJS public key
+      );
+      
+      console.log('EmailJS response:', result);
+      
+      if (result.status === 200) {
+        console.log('Email sent successfully');
+        setSent(true);
+        // unlock achievement and complete quest step
+        setAchEarned(prev => ({ ...prev, ['contact-form']: true }));
+        setQuest(q => ({
+          ...q,
+          milestones: q.milestones.map(m => m.id === 'wire-contact' ? { ...m, done: true } : m)
+        }));
+        pushToast('Success', 'Your message has been sent!');
+        
+        // Reset form after delay
+        setTimeout(() => {
+          console.log('Resetting form');
+          setOpenForm(false);
+          setSent(false);
+          setName('');
+          setEmail('');
+          setMessage('');
+          setErrors({});
+        }, 1500);
       } else {
-        // Local fallback: simulate success
-        await new Promise(r => setTimeout(r, 600))
+        console.error('Unexpected response status:', result.status);
+        throw new Error(`Unexpected response status: ${result.status}`);
       }
-      setSent(true)
-      // unlock achievement and complete quest step
-      setAchEarned(prev => ({ ...prev, ['contact-form']: true }))
-      setQuest(q=>({ ...q, milestones: q.milestones.map(m=>m.id==='wire-contact'?{...m, done:true}:m) }))
-      setTimeout(() => {
-        setOpenForm(false);
-        setSent(false);
-        setName(''); setEmail(''); setMessage('');
-        setSubject(''); setProject(''); setBudget(''); setTimeline('')
-      }, 900)
-    } catch {
-      setErrors(prev => ({ ...prev, submit: 'Failed to send. Try again.' }))
+    } catch (error) {
+      console.error('Error in submitForm:', {
+        error,
+        message: error.message,
+        stack: error.stack,
+        response: error.response
+      });
+      
+      pushToast('Error', 'Failed to send message. Please try again.');
+      setErrors(prev => ({
+        ...prev,
+        submit: 'Failed to send. Please try again.'
+      }));
     } finally {
-      setSubmitting(false)
+      console.log('Setting submitting to false');
+      setSubmitting(false);
     }
   }
 
@@ -361,60 +407,87 @@ export default function System() {
             <span className="hidden sm:inline">Server Time: 00:42</span>
             <span className="hidden sm:inline">Local Time: 13:42</span>
           </div>
+          
+          <button 
+            onClick={() => setOpenForm(true)}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-white/10 hover:bg-white/5 transition-colors text-xs tracking-wider"
+          >
+            <span>Contact Me</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </button>
 
       {/* Slide-in Hire Form (legacy placement hidden) */}
+      {/* Overlay that appears when form is open */}
       <div
-        className={`hidden fixed inset-0 z-40 transition-colors duration-500 ${openForm ? 'pointer-events-auto bg-black/70' : 'pointer-events-none bg-transparent'}`}
+        className={`fixed inset-0 z-40 transition-colors duration-500 ${openForm ? 'pointer-events-auto bg-black/70' : 'pointer-events-none bg-transparent'}`}
         onClick={() => setOpenForm(false)}
       />
       <aside
         aria-hidden={!openForm}
         aria-label="Open for Hire Form"
-        className={`hidden fixed left-0 top-0 z-50 h-full w-[320px] sm:w-[420px] translate-x-[-110%] ${openForm ? 'translate-x-0' : ''} transition-transform duration-500 bg-black/90 border-r border-white/10 backdrop-blur px-5 py-6 text-neutral-200 [box-shadow:0_0_0_1px_rgba(224,75,67,.35)_inset] animate-[glowPulse_3s_ease-in-out_infinite]`}
+        className={`fixed left-0 top-0 z-50 h-full w-[320px] sm:w-[420px] ${openForm ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-500 bg-black/90 border-r border-white/10 backdrop-blur px-5 py-6 text-neutral-200 [box-shadow:0_0_0_1px_rgba(224,75,67,.35)_inset] animate-[glowPulse_3s_ease-in-out_infinite]`}
       > 
+        {/* Form Header */}
         <div className="mb-4 flex items-center justify-between">
-          <div className="text-xs uppercase tracking-[0.25em] text-neutral-200">Open for Hire</div>
-          <button type="button" onClick={()=>setOpenForm(false)} className="rounded-sm border border-white/15 bg-black/40 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-neutral-300 hover:bg-white/10">Close</button>
+          <div>
+            <div className="text-xs uppercase tracking-[0.25em] text-neutral-200">
+              Contact Me
+            </div>
+            <div className="text-[11px] text-neutral-400">
+              I'll get back to you as soon as possible
+            </div>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => setOpenForm(false)} 
+            className="rounded-sm border border-white/15 bg-black/40 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-neutral-300 hover:bg-white/10"
+          >
+            Close
+          </button>
         </div>
-        <div className="mt-1 text-[11px] text-neutral-400">I would love to hear about your projects!</div>
 
-        <form ref={formRef} className="mt-6 space-y-4" onSubmit={(e)=>{e.preventDefault(); if (!submitting) submitForm()}}>
+        <form 
+          ref={formRef} 
+          className="mt-6 space-y-4" 
+          onSubmit={async (e) => {
+            e.preventDefault();
+            console.log('Form submitted');
+            if (!submitting) {
+              console.log('Calling submitForm');
+              await submitForm();
+            } else {
+              console.log('Form is already submitting');
+            }
+          }}
+        >
           <label className="block">
-            <span className="text-[11px] uppercase tracking-[0.2em] text-neutral-400">How should I call you?</span>
-            <input ref={firstFieldRef} value={name} onChange={e=>setName(e.target.value)} className={`mt-2 w-full rounded-sm border bg-black/40 px-3 py-2 text-sm outline-none focus:border-[#e04b43]/60 ${errors.name ? 'border-[#e04b43]/60' : 'border-white/10'}`} placeholder="Your name" />
+            <span className="text-[11px] uppercase tracking-[0.2em] text-neutral-400">Your Name</span>
+            <input 
+              ref={firstFieldRef} 
+              type="text"
+              name="from_name"
+              value={name} 
+              onChange={e => setName(e.target.value)} 
+              className={`mt-2 w-full rounded-sm border bg-black/40 px-3 py-2 text-sm outline-none focus:border-[#e04b43]/60 ${errors.name ? 'border-[#e04b43]/60' : 'border-white/10'}`} 
+              placeholder="Enter your name"
+              required
+            />
             {errors.name && <span className="mt-1 block text-[11px] text-[#e04b43]">{errors.name}</span>}
           </label>
-          {formType === 'connect' && (
-            <label className="block">
-              <span className="text-[11px] uppercase tracking-[0.2em] text-neutral-400">Subject</span>
-              <input value={subject} onChange={e=>setSubject(e.target.value)} className={`mt-2 w-full rounded-sm border bg-black/40 px-3 py-2 text-sm outline-none focus:border-[#e04b43]/60 ${errors.subject ? 'border-[#e04b43]/60' : 'border-white/10'}`} placeholder="What do you want to talk about?" />
-              {errors.subject && <span className="mt-1 block text-[11px] text-[#e04b43]">{errors.subject}</span>}
-            </label>
-          )}
-          {formType === 'hire' && (
-            <>
-              <label className="block">
-                <span className="text-[11px] uppercase tracking-[0.2em] text-neutral-400">Project</span>
-                <input value={project} onChange={e=>setProject(e.target.value)} className={`mt-2 w-full rounded-sm border bg-black/40 px-3 py-2 text-sm outline-none focus:border-[#e04b43]/60 ${errors.project ? 'border-[#e04b43]/60' : 'border-white/10'}`} placeholder="Project name or brief" />
-                {errors.project && <span className="mt-1 block text-[11px] text-[#e04b43]">{errors.project}</span>}
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block">
-                  <span className="text-[11px] uppercase tracking-[0.2em] text-neutral-400">Budget</span>
-                  <input value={budget} onChange={e=>setBudget(e.target.value)} className={`mt-2 w-full rounded-sm border bg-black/40 px-3 py-2 text-sm outline-none focus:border-[#e04b43]/60 ${errors.budget ? 'border-[#e04b43]/60' : 'border-white/10'}`} placeholder="$3k–$5k" />
-                  {errors.budget && <span className="mt-1 block text-[11px] text-[#e04b43]">{errors.budget}</span>}
-                </label>
-                <label className="block">
-                  <span className="text-[11px] uppercase tracking-[0.2em] text-neutral-400">Timeline</span>
-                  <input value={timeline} onChange={e=>setTimeline(e.target.value)} className={`mt-2 w-full rounded-sm border bg-black/40 px-3 py-2 text-sm outline-none focus:border-[#e04b43]/60 ${errors.timeline ? 'border-[#e04b43]/60' : 'border-white/10'}`} placeholder="2–4 weeks" />
-                  {errors.timeline && <span className="mt-1 block text-[11px] text-[#e04b43]">{errors.timeline}</span>}
-                </label>
-              </div>
-            </>
-          )}
+          
           <label className="block">
-            <span className="text-[11px] uppercase tracking-[0.2em] text-neutral-400">Sending from</span>
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} className={`mt-2 w-full rounded-sm border bg-black/40 px-3 py-2 text-sm outline-none focus:border-[#e04b43]/60 ${errors.email ? 'border-[#e04b43]/60' : 'border-white/10'}`} placeholder="your.name@email.com" />
+            <span className="text-[11px] uppercase tracking-[0.2em] text-neutral-400">Email Address</span>
+            <input 
+              type="email" 
+              name="email"
+              value={email} 
+              onChange={e => setEmail(e.target.value)} 
+              className={`mt-2 w-full rounded-sm border bg-black/40 px-3 py-2 text-sm outline-none focus:border-[#e04b43]/60 ${errors.email ? 'border-[#e04b43]/60' : 'border-white/10'}`} 
+              placeholder="your@email.com" 
+              required
+            />
             {errors.email && <span className="mt-1 block text-[11px] text-[#e04b43]">{errors.email}</span>}
           </label>
           <label className="block">
@@ -433,10 +506,36 @@ export default function System() {
           </label>
 
           <div className="mt-3 flex gap-3">
-            <button type="submit" disabled={submitting} className="rounded-sm px-3 py-2 text-[11px] uppercase tracking-[0.2em] hover:opacity-90 disabled:opacity-60" style={{ borderColor: 'color-mix(in srgb, var(--accent) 70%, transparent)', borderWidth: 1, background: 'color-mix(in srgb, var(--accent) 20%, transparent)', color: 'var(--accent)' }}>{submitting ? 'Sending…' : sent ? 'Sent!' : 'Send Message [Enter]'}</button>
+            <button 
+              type="submit" 
+              disabled={submitting} 
+              className="relative overflow-hidden rounded-sm bg-[#e04b43] px-4 py-2 text-sm font-medium text-white hover:bg-[#c53d36] disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={(e) => {
+                if (submitting) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              {submitting ? (
+                <>
+                  <span className="opacity-0">Sending...</span>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <svg className="h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="ml-2">Sending...</span>
+                  </div>
+                </>
+              ) : 'Send Message'}
+            </button>
             <button type="button" onClick={()=>setOpenForm(false)} className="rounded-sm border border-white/15 bg-black/40 px-3 py-2 text-[11px] uppercase tracking-[0.2em] text-neutral-300 hover:bg-white/10">Discard [Esc]</button>
           </div>
-          {errors.submit && <div className="mt-2 text-[11px] text-[#e04b43]">{errors.submit}</div>}
+          {errors.submit && (
+            <div className="mt-4 rounded-md bg-red-500/20 p-3 text-sm text-red-300">
+              {errors.submit}
+            </div>
+          )}
         </form>
 
         <div className="pointer-events-none absolute left-0 top-0 h-4 w-4 border-l border-t border-[#e04b43]/40" />
@@ -525,9 +624,23 @@ export default function System() {
           <div className="text-xs uppercase tracking-[0.25em] text-neutral-200">{formType === 'connect' ? 'Connect with me' : 'Open for Hire'}</div>
           <button type="button" onClick={()=>setOpenForm(false)} className="rounded-sm border border-white/15 bg-black/40 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-neutral-300 hover:bg-white/10">Close</button>
         </div>
+        // eslint-disable-next-line no-undef
         <div className="mt-1 text-[11px] text-neutral-400">{formType === 'connect' ? 'Wanna chat? Or just share something cool?' : 'I would love to hear about your projects!'}</div>
 
-        <form ref={formRef} className="mt-6 space-y-4" onSubmit={(e)=>{e.preventDefault(); if (!submitting) submitForm()}}>
+        <form 
+          ref={formRef} 
+          className="mt-6 space-y-4" 
+          onSubmit={async (e) => {
+            e.preventDefault();
+            console.log('Form submitted');
+            if (!submitting) {
+              console.log('Calling submitForm');
+              await submitForm();
+            } else {
+              console.log('Form is already submitting');
+            }
+          }}
+        >
           <label className="block">
             <span className="text-[11px] uppercase tracking-[0.2em] text-neutral-400">How should I call you?</span>
             <input ref={firstFieldRef} value={name} onChange={e=>setName(e.target.value)} className={`mt-2 w-full rounded-sm border bg-black/40 px-3 py-2 text-sm outline-none focus:border-[#e04b43]/60 ${errors.name ? 'border-[#e04b43]/60' : 'border-white/10'}`} placeholder="Your name" />
@@ -609,14 +722,14 @@ export default function System() {
               <div className="text-sm uppercase tracking-[0.25em] text-neutral-400">Name</div>
               <div className="mt-1 text-lg font-semibold">Idriss Mrayah</div>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-              <span className="rounded border border-white/10 bg-white/5 px-2 py-1 text-center">Web Dev</span>
-              <button type="button" onClick={()=>{setFormType('hire'); setOpenForm(true)}} className="rounded border border-white/10 bg-white/5 px-2 py-1 text-center hover:bg-white/10 cursor-pointer">Open for Hire</button>
-            </div>
             <div className="mt-4">
-              <button onClick={() => { setFormType('connect'); setOpenForm(true) }} className="w-full rounded-sm px-3 py-2 text-[11px] uppercase tracking-[0.2em] transition-all hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2" style={{ borderColor: 'color-mix(in srgb, var(--accent) 60%, transparent)', borderWidth: 1, color: 'var(--accent)' }}>
-              Open Connection
-            </button>
+              <button 
+                onClick={() => setOpenForm(true)} 
+                className="w-full rounded-sm px-3 py-2 text-[11px] uppercase tracking-[0.2em] transition-all hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2" 
+                style={{ borderColor: 'color-mix(in srgb, var(--accent) 60%, transparent)', borderWidth: 1, color: 'var(--accent)' }}
+              >
+                Contact Me
+              </button>
             </div>
           </div>
 

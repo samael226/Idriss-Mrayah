@@ -142,9 +142,12 @@ export default function Logs() {
             </div>
           </div>
 
-          <div className="rounded-md border border-white/15 bg-black/40 p-4 text-xs">
-            <div className="uppercase tracking-[0.25em] text-neutral-400">Motto</div>
-            <p className="mt-2 text-neutral-300/90">Saepe omnis neque numquam recusandae laudantium.</p>
+          <div className="rounded-md border border-white/15 bg-gradient-to-br from-black/40 to-black/60 p-4 text-xs backdrop-blur-sm">
+            <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-neutral-400">Motto</div>
+            <p className="mt-2 font-['Orbitron'] font-semibold text-white/95 tracking-wide">
+              <span className="block text-sm md:text-base">Akiramenai no ga ore no mahō da!</span>
+              <span className="text-amber-300/90 text-[0.7rem] md:text-xs font-normal italic">(Not giving up is my magic!)</span>
+            </p>
           </div>
         </aside>
 

@@ -770,6 +770,12 @@ export default function System() {
             <p className="mt-2 text-neutral-300/90">View your active and completed projects.</p>
             <Link to="/projects" className="mt-3 inline-flex items-center gap-2 rounded-sm px-3 py-2 text-[11px] uppercase tracking-[0.2em] hover:bg-white/10" style={{ borderColor: 'color-mix(in srgb, var(--accent) 60%, transparent)', borderWidth: 1, color: 'var(--accent)' }}>Open Projects</Link>
           </div>
+
+          <div className="rounded-md border border-white/15 bg-black/40 p-4 text-xs">
+            <div className="uppercase tracking-[0.25em] text-neutral-400">About me</div>
+            <p className="mt-2 text-neutral-300/90">Learn more about me and my journey.</p>
+            <Link to="/about" className="mt-3 inline-flex items-center gap-2 rounded-sm px-3 py-2 text-[11px] uppercase tracking-[0.2em] hover:bg-white/10" style={{ borderColor: 'color-mix(in srgb, var(--accent) 60%, transparent)', borderWidth: 1, color: 'var(--accent)' }}>Open About</Link>
+          </div>
           
         </aside>
 

@@ -1,6 +1,7 @@
 // src/components/projects/ProjectFilters.jsx
-import { useState, useMemo } from 'react';
-import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import { useState, useMemo, useCallback } from 'react';
+import { MagnifyingGlassIcon, FunnelIcon, XMarkIcon, AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const categories = [
   { id: 'all', name: 'All Projects', icon: '📁' },
@@ -24,6 +25,29 @@ const sortOptions = [
 
 const ProjectFilters = ({ filters, onFilterChange, projects = [] }) => {
   const [selectedTech, setSelectedTech] = useState([]);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Handle search with debounce
+  const handleSearchWithDebounce = useCallback(
+    (value) => {
+      onFilterChange({ ...filters, search: value });
+    },
+    [filters, onFilterChange]
+  );
+
+  // Update search with debounce
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    // Debounce the search
+    const timer = setTimeout(() => {
+      handleSearchWithDebounce(value);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  };
 
   // Get all unique technologies from projects
   const allTechnologies = useMemo(() => {
@@ -43,12 +67,9 @@ const ProjectFilters = ({ filters, onFilterChange, projects = [] }) => {
     setSelectedTech(newSelectedTech);
     onFilterChange({ ...filters, technologies: newSelectedTech });
   };
-  const handleSearchChange = (e) => {
-    onFilterChange({ ...filters, search: e.target.value });
-  };
 
-  const handleCategoryChange = (category) => {
-    onFilterChange({ ...filters, category });
+  const handleCategoryChange = (categoryId) => {
+    onFilterChange({ ...filters, category: categoryId });
   };
 
   const handleSortChange = (e) => {
@@ -57,88 +78,200 @@ const ProjectFilters = ({ filters, onFilterChange, projects = [] }) => {
 
   return (
     <div className="space-y-4">
+      {/* Mobile Filter Toggle */}
+      <div className="sm:hidden flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-white">Projects</h2>
+        <button
+          onClick={() => setShowMobileFilters(!showMobileFilters)}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-crimson-500/10 hover:bg-crimson-500/20 transition-colors text-sm text-crimson-300 border border-crimson-500/30"
+        >
+          <AdjustmentsHorizontalIcon className="h-5 w-5" />
+          <span>Filters</span>
+        </button>
+      </div>
+
       {/* Search Bar */}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+          <MagnifyingGlassIcon className="h-5 w-5 text-crimson-400/80" />
         </div>
         <input
           type="text"
-          className="block w-full pl-10 pr-3 py-2 border border-white/10 bg-black/30 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-transparent"
+          className="block w-full pl-10 pr-3 py-2.5 border border-crimson-500/20 bg-black/50 rounded-lg text-white placeholder-crimson-300/50 focus:outline-none focus:ring-2 focus:ring-crimson-500/30 focus:border-crimson-500/30 text-sm transition-all duration-200"
           placeholder="Search projects..."
-          value={filters.search}
+          value={searchQuery}
           onChange={handleSearchChange}
         />
-      </div>
-
-      {/* Technology Filter */}
-      {allTechnologies.length > 0 && (
-        <div className="mb-4">
-          <h3 className="text-sm font-medium text-neutral-400 mb-2">Technologies</h3>
-          <div className="flex flex-wrap gap-2">
-            {allTechnologies.slice(0, 8).map(tech => (
-              <button
-                key={tech}
-                type="button"
-                onClick={() => toggleTech(tech)}
-                className={`px-2.5 py-1 text-xs rounded-full transition-colors ${
-                  selectedTech.includes(tech)
-                    ? 'bg-white text-black'
-                    : 'bg-white/5 text-white hover:bg-white/10'
-                }`}
-              >
-                {tech}
-              </button>
-            ))}
-            {allTechnologies.length > 8 && (
-              <span className="text-xs text-neutral-400 self-center">
-                +{allTechnologies.length - 8} more
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Category Tabs */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {categories.map((category) => (
+        {searchQuery && (
           <button
-            key={category.id}
-            onClick={() => handleCategoryChange(category.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${
-              filters.category === category.id
-                ? 'bg-white text-black'
-                : 'bg-white/5 text-white hover:bg-white/10'
-            }`}
+            onClick={() => {
+              setSearchQuery('');
+              onFilterChange({ ...filters, search: '' });
+            }}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-crimson-300 transition-colors"
           >
-            <span className="text-lg">{category.icon}</span>
-            <span>{category.name}</span>
+            <XMarkIcon className="h-4 w-4 text-crimson-400/80" />
           </button>
-        ))}
+        )}
       </div>
 
-      {/* Sort Dropdown */}
-      <div className="flex items-center justify-between">
+      {/* Mobile Filters Overlay */}
+      <AnimatePresence>
+        {showMobileFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="sm:hidden overflow-hidden"
+          >
+            <div className="space-y-4 py-4">
+              {/* Category Tabs - Mobile */}
+              <div>
+                <h3 className="text-sm font-medium text-neutral-300 mb-2">Categories</h3>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => {
+                        handleCategoryChange(category.id);
+                        setShowMobileFilters(false);
+                      }}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm transition-colors ${
+                        filters.category === category.id
+                          ? 'bg-crimson-500 text-white shadow-crimson-500/20'
+                          : 'bg-crimson-500/10 text-crimson-200 hover:bg-crimson-500/20'
+                      }`}
+                    >
+                      <span>{category.icon}</span>
+                      <span className="text-xs">{category.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Technology Filter */}
+              {allTechnologies.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium text-neutral-300">Technologies</h3>
+                    {selectedTech.length > 0 && (
+                      <button
+                        onClick={() => {
+                          setSelectedTech([]);
+                          onFilterChange({ ...filters, technologies: [] });
+                        }}
+                        className="text-xs text-crimson-400 hover:text-crimson-300 flex items-center gap-1"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1 -m-1">
+                    {allTechnologies.map(tech => (
+                      <button
+                        key={tech}
+                        type="button"
+                        onClick={() => toggleTech(tech)}
+                        className={`px-3 py-1.5 text-xs rounded-full transition-all ${
+                          selectedTech.includes(tech)
+                            ? 'bg-crimson-600 text-white shadow-crimson-500/30 shadow-md'
+                            : 'bg-crimson-500/10 text-crimson-200 hover:bg-crimson-500/20 border border-crimson-500/20'
+                        }`}
+                      >
+                        {tech}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Desktop Filters */}
+      <div className="hidden sm:block space-y-6">
+        {/* Category Tabs - Desktop */}
+        <div className="flex flex-wrap gap-2">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => handleCategoryChange(category.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                filters.category === category.id
+                  ? 'bg-gradient-to-r from-crimson-600 to-crimson-700 text-white shadow-lg shadow-crimson-500/20'
+                  : 'bg-crimson-500/10 text-crimson-200 hover:bg-crimson-500/20 border border-crimson-500/20'
+              }`}
+            >
+              <span className="text-lg">{category.icon}</span>
+              <span className="text-sm font-medium">{category.name}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Technology Filter - Desktop */}
+        {allTechnologies.length > 0 && (
+          <div className="bg-black/40 rounded-xl p-4 border border-crimson-500/20 shadow-lg shadow-crimson-500/10">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium text-neutral-300">Filter by Technology</h3>
+              {selectedTech.length > 0 && (
+                <button
+                  onClick={() => {
+                    setSelectedTech([]);
+                    onFilterChange({ ...filters, technologies: [] });
+                  }}
+                  className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                >
+                  <XMarkIcon className="h-3.5 w-3.5" />
+                  <span>Clear all</span>
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {allTechnologies.map(tech => (
+                <button
+                  key={tech}
+                  type="button"
+                  onClick={() => toggleTech(tech)}
+                  className={`px-3 py-1.5 text-xs rounded-full transition-all ${
+                    selectedTech.includes(tech)
+                      ? 'bg-gradient-to-r from-crimson-600 to-crimson-700 text-white shadow-md shadow-crimson-500/20'
+                      : 'bg-crimson-500/10 text-crimson-200 hover:bg-crimson-500/20 border border-crimson-500/20'
+                  }`}
+                >
+                  {tech}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Results and Sort */}
+      <div className="flex items-center justify-between pt-2 border-t border-crimson-500/10">
         <div className="text-sm text-neutral-400">
-          {filters.search ? (
+          {projects.length > 0 ? (
             <span>
-              Found {filters.search ? 'matching' : ''} projects
+              {filters.search ? 'Found' : 'Showing'} {projects.length} {projects.length === 1 ? 'project' : 'projects'}
+              {filters.search && ` matching "${filters.search}"`}
             </span>
-          ) : null}
+          ) : (
+            <span className="text-crimson-300">No projects found. Try adjusting your filters.</span>
+          )}
         </div>
         <div className="relative">
           <select
             value={filters.sort}
             onChange={handleSortChange}
-            className="appearance-none bg-black/30 border border-white/10 rounded-md pl-3 pr-8 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+            className="appearance-none bg-black/30 border border-white/10 rounded-lg pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent"
           >
             {sortOptions.map((option) => (
-              <option key={option.id} value={option.id}>
-                Sort: {option.name}
+              <option key={option.id} value={option.id} className="bg-gray-800">
+                {option.name}
               </option>
             ))}
           </select>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+          <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none">
             <FunnelIcon className="h-4 w-4 text-gray-400" />
           </div>
         </div>

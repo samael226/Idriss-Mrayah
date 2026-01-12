@@ -1,9 +1,22 @@
 // src/components/projects/ProjectDetail.jsx
-import { XMarkIcon, ArrowTopRightOnSquareIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ArrowTopRightOnSquareIcon, CodeBracketIcon, TrashIcon, ClockIcon, CalendarIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ProjectDetail = ({ project, onClose }) => {
+const ProjectDetail = ({ project, onClose, onDelete }) => {
   if (!project) return null;
+
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return 'bg-green-500/10 text-green-400';
+      case 'in progress':
+        return 'bg-blue-500/10 text-blue-400';
+      case 'on hold':
+        return 'bg-yellow-500/10 text-yellow-400';
+      default:
+        return 'bg-gray-500/10 text-gray-400';
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -11,80 +24,166 @@ const ProjectDetail = ({ project, onClose }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 overflow-y-auto"
+        className="fixed inset-0 z-50 overflow-y-auto p-4"
       >
-        <div className="fixed inset-0 bg-black/80" onClick={onClose} />
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm" 
+          onClick={onClose}
+        />
         
-        <div className="relative mx-auto my-8 max-w-4xl w-full px-4">
+        <div className="relative mx-auto max-w-5xl w-full">
           <motion.div
-            initial={{ y: 50, opacity: 0 }}
+            initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 50, opacity: 0 }}
-            className="relative bg-[#0b0b0c] rounded-lg border border-white/10 overflow-hidden"
+            exit={{ y: 20, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="relative bg-[#0f0f0f] rounded-xl border-2 border-[#1a1a1a] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="relative h-64 bg-black/50 overflow-hidden">
+            {/* Header with image */}
+            <div className="relative h-72 bg-gradient-to-r from-[#1a1a1a] to-[#0a0a0a] overflow-hidden">
               {project.imageUrl ? (
                 <img
                   src={project.imageUrl}
                   alt={project.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover opacity-90"
                 />
               ) : (
-                <div className="h-full flex items-center justify-center bg-gradient-to-br from-purple-900/50 to-blue-900/50">
-                  <CodeBracketIcon className="h-16 w-16 text-white/20" />
+                <div className="h-full flex items-center justify-center bg-gradient-to-br from-[#8B0000]/20 to-[#ff4d4d]/10">
+                  <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+                    {project.title}
+                  </h2>
                 </div>
               )}
-              <button
-                onClick={onClose}
-                className="absolute top-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/75 transition-colors"
-              >
-                <XMarkIcon className="h-5 w-5 text-white" />
-              </button>
+              
+              {/* Action buttons */}
+              <div className="absolute top-4 right-4 flex gap-2">
+                {onDelete && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm('Are you sure you want to delete this project?')) {
+                        onDelete();
+                      }
+                    }}
+                    className="p-2 rounded-lg bg-black/50 hover:bg-red-600/50 backdrop-blur-sm transition-all duration-200 text-red-400 hover:text-white"
+                    aria-label="Delete project"
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="p-2 rounded-lg bg-black/50 hover:bg-white/10 backdrop-blur-sm transition-all duration-200 text-gray-300 hover:text-white"
+                  aria-label="Close"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
             {/* Content */}
-            <div className="p-6">
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div className="p-6 md:p-8">
+              <div className="flex flex-col lg:flex-row gap-8">
+                {/* Main content */}
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-bold">{project.title}</h2>
-                    <span className="px-2 py-1 text-xs rounded-full bg-white/10">
-                      {project.status}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-4 text-sm text-neutral-400 mb-6">
-                    <span>{new Date(project.date).toLocaleDateString()}</span>
-                    <span>•</span>
-                    <span>{project.location}</span>
-                  </div>
-
-                  <p className="text-neutral-300 mb-6">{project.description}</p>
-
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-3">Technologies Used</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {project.technologies.map((tech) => (
-                        <span
-                          key={tech}
-                          className="px-3 py-1 text-sm rounded-full bg-white/5 text-neutral-300"
-                        >
-                          {tech}
-                        </span>
-                      ))}
+                  <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+                    <div>
+                      <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
+                        {project.title}
+                      </h1>
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
+                        {project.date && (
+                          <span className="flex items-center gap-1.5">
+                            <CalendarIcon className="h-4 w-4" />
+                            {new Date(project.date).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </span>
+                        )}
+                        {project.duration && (
+                          <span className="flex items-center gap-1.5">
+                            <ClockIcon className="h-4 w-4" />
+                            {project.duration}
+                          </span>
+                        )}
+                        {project.location && (
+                          <span className="flex items-center gap-1.5">
+                            <MapPinIcon className="h-4 w-4" />
+                            {project.location}
+                          </span>
+                        )}
+                      </div>
                     </div>
+                    
+                    {project.status && (
+                      <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}>
+                        {project.status}
+                      </div>
+                    )}
                   </div>
 
-                  {project.features && project.features.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold mb-3">Key Features</h3>
-                      <ul className="space-y-2">
+                  <div className="prose prose-invert max-w-none mb-8">
+                    <p className="text-gray-300 leading-relaxed">
+                      {project.description}
+                    </p>
+                  </div>
+
+                  {/* Technologies */}
+                  {project.technologies?.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="text-lg font-semibold text-white mb-3">Technologies Used</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {project.technologies.map((tech) => (
+                          <span
+                            key={tech}
+                            className="px-3 py-1.5 text-sm rounded-full bg-[#1a1a1a] border border-white/5 text-gray-300 hover:bg-[#8B0000]/20 hover:border-[#8B0000]/30 transition-colors"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Key Features */}
+                  {project.features?.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
+                        <span className="w-1.5 h-6 bg-[#8B0000] rounded-full mr-2"></span>
+                        Key Features
+                      </h3>
+                      <ul className="space-y-3">
                         {project.features.map((feature, i) => (
+                          <li key={i} className="flex items-start group">
+                            <span className="text-[#8B0000] mr-3 mt-1">
+                              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                            <span className="text-gray-300 group-hover:text-white transition-colors">
+                              {feature}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Results & Impact */}
+                  {project.results?.length > 0 && (
+                    <div className="bg-[#0a0a0a]/50 p-6 rounded-xl border border-white/5">
+                      <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
+                        <span className="w-1.5 h-6 bg-blue-500 rounded-full mr-2"></span>
+                        Results & Impact
+                      </h3>
+                      <ul className="space-y-3">
+                        {project.results.map((result, i) => (
                           <li key={i} className="flex items-start">
-                            <span className="text-green-400 mr-2">•</span>
-                            <span className="text-neutral-300">{feature}</span>
+                            <span className="text-blue-400 mr-3 mt-1">•</span>
+                            <span className="text-gray-300">{result}</span>
                           </li>
                         ))}
                       </ul>
@@ -92,21 +191,23 @@ const ProjectDetail = ({ project, onClose }) => {
                   )}
                 </div>
 
-                <div className="md:w-64 flex-shrink-0 space-y-4">
+                {/* Sidebar */}
+                <div className="lg:w-80 flex-shrink-0 space-y-6">
+                  {/* Links */}
                   {(project.githubUrl || project.demoUrl) && (
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-medium text-neutral-400">Links</h3>
+                    <div className="bg-[#0a0a0a]/50 p-5 rounded-xl border border-white/5">
+                      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Project Links</h3>
                       <div className="space-y-2">
                         {project.githubUrl && (
                           <a
                             href={project.githubUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-md transition-colors"
+                            className="flex items-center gap-3 px-4 py-3 bg-[#1a1a1a] hover:bg-[#8B0000]/20 border border-white/5 rounded-lg transition-all duration-200 group"
                           >
-                            <CodeBracketIcon className="h-4 w-4" />
-                            <span>View Code</span>
-                            <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5 ml-auto opacity-50" />
+                            <CodeBracketIcon className="h-5 w-5 text-gray-400 group-hover:text-white" />
+                            <span className="text-gray-300 group-hover:text-white">View Code</span>
+                            <ArrowTopRightOnSquareIcon className="h-4 w-4 ml-auto text-gray-500 group-hover:text-white" />
                           </a>
                         )}
                         {project.demoUrl && (
@@ -114,45 +215,52 @@ const ProjectDetail = ({ project, onClose }) => {
                             href={project.demoUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-md transition-colors"
+                            className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-[#8B0000] to-[#ff4d4d] hover:from-[#9a1a1a] hover:to-[#ff5e5e] text-white rounded-lg transition-all duration-200 group"
                           >
-                            <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                            <ArrowTopRightOnSquareIcon className="h-5 w-5" />
                             <span>Live Demo</span>
-                            <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5 ml-auto opacity-50" />
+                            <ArrowTopRightOnSquareIcon className="h-4 w-4 ml-auto text-white/70 group-hover:text-white" />
                           </a>
                         )}
                       </div>
                     </div>
                   )}
 
-                  {project.challenges && project.challenges.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-medium text-neutral-400 mb-2">Challenges</h3>
-                      <div className="space-y-2">
+                  {/* Challenges */}
+                  {project.challenges?.length > 0 && (
+                    <div className="bg-[#0a0a0a]/50 p-5 rounded-xl border border-white/5">
+                      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Challenges Faced</h3>
+                      <div className="space-y-3">
                         {project.challenges.map((challenge, i) => (
-                          <div key={i} className="text-sm text-neutral-300 p-3 bg-white/5 rounded-md">
+                          <div 
+                            key={i} 
+                            className="text-sm text-gray-300 p-3 bg-[#1a1a1a] rounded-lg border border-white/5 hover:border-[#8B0000]/30 transition-colors"
+                          >
                             {challenge}
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
+
+                  {/* Tags */}
+                  {project.tags?.length > 0 && (
+                    <div className="bg-[#0a0a0a]/50 p-5 rounded-xl border border-white/5">
+                      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Tags</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {project.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-2.5 py-1 text-xs rounded-full bg-[#1a1a1a] text-gray-300 border border-white/5 hover:bg-[#8B0000]/20 hover:border-[#8B0000]/30 transition-colors"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {project.results && project.results.length > 0 && (
-                <div className="mt-8 pt-6 border-t border-white/10">
-                  <h3 className="text-lg font-semibold mb-3">Results & Impact</h3>
-                  <ul className="space-y-2">
-                    {project.results.map((result, i) => (
-                      <li key={i} className="flex items-start">
-                        <span className="text-blue-400 mr-2">•</span>
-                        <span className="text-neutral-300">{result}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
           </motion.div>
         </div>

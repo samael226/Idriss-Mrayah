@@ -7,6 +7,7 @@ import Achievements from './pages/Achievements.jsx';
 import Contact from './pages/Contact.jsx';
 import GameProvider from './components/game/GameProvider.jsx';
 import Projects from './pages/Projects.jsx';
+import AboutMe from './pages/AboutMe.jsx';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/projects" element={<Projects />} />
+          <Route path="/about" element={<AboutMe />} />
         </Routes>
       </GameProvider>
     </NotificationProvider>

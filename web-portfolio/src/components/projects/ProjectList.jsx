@@ -1,12 +1,19 @@
 // src/components/projects/ProjectList.jsx
-import { useState } from 'react';
-import { PlusIcon, FunnelIcon, Squares2X2Icon, ListBulletIcon } from '@heroicons/react/24/outline';
+import { useState, useMemo } from 'react';
+import { PlusIcon, FunnelIcon, XMarkIcon, Squares2X2Icon, ListBulletIcon } from '@heroicons/react/24/outline';
 import ProjectsGrid from './ProjectsGrid';
-import ProjectFilters from './ProjectFilters';
 import ProjectForm from './ProjectForm';
-import Button from '../ui/Button.jsx';
+import ProjectFilters from './ProjectFilters';
+import { motion, AnimatePresence } from 'framer-motion';
+import Button from '../ui/Button';
 
-const ProjectList = ({ projects, onAddProject, onUpdateProject, onDeleteProject, onProjectClick }) => {
+const ProjectList = ({ 
+  projects, 
+  onAddProject, 
+  onUpdateProject, 
+  onDeleteProject, 
+  onProjectClick 
+}) => {
   const [showForm, setShowForm] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
@@ -20,9 +27,12 @@ const ProjectList = ({ projects, onAddProject, onUpdateProject, onDeleteProject,
   const [currentPage, setCurrentPage] = useState(1);
   const projectsPerPage = 9;
 
-  // Apply filters and sorting
-  const filteredProjects = projects
-    .filter(project => {
+  // Memoize filtered and sorted projects
+  const { filteredProjects, totalPages } = useMemo(() => {
+    let filtered = [...projects];
+    
+    // Apply filters
+    filtered = filtered.filter(project => {
       // Category filter
       if (filters.category !== 'all' && !project.categories?.includes(filters.category)) {
         return false;
@@ -45,55 +55,84 @@ const ProjectList = ({ projects, onAddProject, onUpdateProject, onDeleteProject,
       }
       
       return true;
-    })
-    .sort((a, b) => {
-      // Sorting logic
+    });
+    
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
       switch (filters.sort) {
         case 'newest':
-          return new Date(b.date) - new Date(a.date);
+          return new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt);
         case 'oldest':
-          return new Date(a.date) - new Date(b.date);
-        case 'a-z':
+          return new Date(a.date || a.createdAt) - new Date(b.date || b.createdAt);
+        case 'name-asc':
           return a.title.localeCompare(b.title);
-        case 'z-a':
+        case 'name-desc':
           return b.title.localeCompare(a.title);
         case 'recently-updated':
-          return new Date(b.updatedAt || b.date) - new Date(a.updatedAt || a.date);
+          return new Date(b.lastUpdated || b.date || b.createdAt) - new Date(a.lastUpdated || a.date || a.createdAt);
         case 'most-popular':
           return (b.views || 0) - (a.views || 0);
         default:
           return 0;
       }
     });
-
-  // Pagination
-  const indexOfLastProject = currentPage * projectsPerPage;
-  const indexOfFirstProject = indexOfLastProject - projectsPerPage;
-  const currentProjects = filteredProjects.slice(indexOfFirstProject, indexOfLastProject);
-  const totalPages = Math.ceil(filteredProjects.length / projectsPerPage);
+    
+    const total = Math.ceil(sorted.length / projectsPerPage);
+    
+    // Apply pagination
+    const paginated = sorted.slice(
+      (currentPage - 1) * projectsPerPage,
+      currentPage * projectsPerPage
+    );
+    
+    return {
+      filteredProjects: paginated,
+      totalPages: total
+    };
+  }, [projects, filters, currentPage]);
 
   const handleEditProject = (project) => {
     setEditingProject(project);
     setShowForm(true);
   };
 
-  const handleSubmitProject = async (projectData) => {
-    if (editingProject) {
-      await onUpdateProject({ ...editingProject, ...projectData });
-    } else {
-      await onAddProject(projectData);
-    }
-    setShowForm(false);
-    setEditingProject(null);
-  };
-
-  const handleDeleteProject = async (projectId) => {
-    if (window.confirm('Are you sure you want to delete this project?')) {
-      await onDeleteProject(projectId);
+  const handleSaveProject = async (projectData) => {
+    try {
+      if (editingProject) {
+        await onUpdateProject({ ...editingProject, ...projectData });
+      } else {
+        await onAddProject(projectData);
+      }
       setShowForm(false);
       setEditingProject(null);
+    } catch (error) {
+      console.error('Error saving project:', error);
     }
   };
+
+  const _handleDelete = async (projectId) => {
+    if (window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+      try {
+        await onDeleteProject(projectId);
+      } catch (error) {
+        console.error('Error deleting project:', error);
+      }
+    }
+  };
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+    setCurrentPage(1);
+  };
+  
+  // Alias for compatibility
+  const handleDeleteProject = (projectId) => {
+    if (window.confirm('Are you sure you want to delete this project?')) {
+      onDeleteProject(projectId);
+    }
+  };
+
+  const handleSubmitProject = handleSaveProject;
 
   return (
     <div className="space-y-6">
@@ -136,16 +175,16 @@ const ProjectList = ({ projects, onAddProject, onUpdateProject, onDeleteProject,
             <span>Filters</span>
           </button>
           
-          <Button
+          <button
             onClick={() => {
               setEditingProject(null);
               setShowForm(true);
             }}
-            className="flex items-center gap-1.5"
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-md font-medium transition-colors"
           >
             <PlusIcon className="h-4 w-4" />
             <span>New Project</span>
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -153,7 +192,7 @@ const ProjectList = ({ projects, onAddProject, onUpdateProject, onDeleteProject,
         <div className="bg-black/30 border border-white/10 rounded-lg p-4">
           <ProjectFilters 
             filters={filters} 
-            onFilterChange={setFilters} 
+            onFilterChange={handleFilterChange} 
             projects={projects} 
           />
         </div>
@@ -173,15 +212,12 @@ const ProjectList = ({ projects, onAddProject, onUpdateProject, onDeleteProject,
         <>
           {viewMode === 'grid' ? (
             <ProjectsGrid 
-              projects={currentProjects} 
-              onEdit={handleEditProject}
-              onDelete={handleDeleteProject}
+              projects={filteredProjects} 
               onProjectClick={onProjectClick}
-              viewMode={viewMode}
             />
           ) : (
             <div className="space-y-4">
-              {currentProjects.map(project => (
+              {filteredProjects.map(project => (
                 <div 
                   key={project.id}
                   className="bg-black/30 border border-white/10 rounded-lg p-4 hover:bg-white/5 transition-colors cursor-pointer"

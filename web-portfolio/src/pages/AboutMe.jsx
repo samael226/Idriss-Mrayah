@@ -76,11 +76,11 @@ const AboutMe = () => {
             <div className="mt-8 grid grid-cols-2 gap-4">
               <div className="p-4 bg-[#0f0f0f] rounded-lg border border-[#1a1a1a]">
                 <h3 className="text-[#8B0000] text-sm font-semibold mb-1">Name</h3>
-                <p className="text-white">Your Name</p>
+                <p className="text-white">Idriss Mrayah</p>
               </div>
               <div className="p-4 bg-[#0f0f0f] rounded-lg border border-[#1a1a1a]">
                 <h3 className="text-[#8B0000] text-sm font-semibold mb-1">Email</h3>
-                <p className="text-white">your.email@example.com</p>
+                <p className="text-white">samael01lu@gmail.com</p>
               </div>
               <div className="p-4 bg-[#0f0f0f] rounded-lg border border-[#1a1a1a]">
                 <h3 className="text-[#8B0000] text-sm font-semibold mb-1">Location</h3>

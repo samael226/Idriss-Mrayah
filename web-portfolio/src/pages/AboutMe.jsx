@@ -14,11 +14,31 @@ const ModelLoader = () => (
 
 const AboutMe = () => {
   const skills = [
-    { name: 'Frontend Development', icon: <CodeBracketIcon className="h-6 w-6" />, description: 'React, Next.js, Tailwind CSS, TypeScript' },
-    { name: 'Backend Development', icon: <CommandLineIcon className="h-6 w-6" />, description: 'Node.js, Express, Python, Django' },
-    { name: 'Mobile Development', icon: <DevicePhoneMobileIcon className="h-6 w-6" />, description: 'React Native, Flutter' },
-    { name: 'UI/UX Design', icon: <CursorArrowRippleIcon className="h-6 w-6" />, description: 'Figma, Adobe XD, User Research' },
-  ];
+    {
+  name: 'Frontend Development',
+  icon: <CodeBracketIcon className="h-6 w-6" />,
+  description:
+    'React, Next.js, Angular, Vue.js, Next.js, Svelte, Tailwind CSS, Bootstrap, Material UI, Ant Design, ShadCN/UI, TypeScript, JavaScript (ES6+), HTML5, CSS3, Redux, Zustand, MobX, React Query, TanStack Query, Framer Motion'
+},
+{
+  name: 'Backend Development',
+  icon: <CommandLineIcon className="h-6 w-6" />,
+  description:
+    'Node.js, Express, NestJS, Spring Boot, Python, Django, Flask, FastAPI, REST APIs, GraphQL, JWT, OAuth2, Microservices, WebSockets, Serverless (AWS Lambda), MVC, Clean Architecture'
+},
+{
+  name: 'Mobile Development',
+  icon: <DevicePhoneMobileIcon className="h-6 w-6" />,
+  description:
+    'React Native, Flutter, Expo, Ionic, NativeScript, Firebase, Supabase, Push Notifications, Offline Storage, App Store & Play Store Deployment'
+},
+{
+  name: 'UI / UX Design',
+  icon: <CursorArrowRippleIcon className="h-6 w-6" />,
+  description:
+    'Figma, Adobe XD, Sketch, InVision, User Research, Wireframing, Prototyping, Design Systems, Accessibility (WCAG), UX Flows, Usability Testing, Interaction Design'
+}
+];
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHBhdHRlcm5UcmFuc2Zvcm09InJvdGF0ZSg0NSkiPjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0icmdiYSgwLDAsMCwwLjAzKSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNwYXR0ZXJuKSIvPjwvc3ZnPg==')] text-gray-100">
@@ -84,7 +104,7 @@ const AboutMe = () => {
               </div>
               <div className="p-4 bg-[#0f0f0f] rounded-lg border border-[#1a1a1a]">
                 <h3 className="text-[#8B0000] text-sm font-semibold mb-1">Location</h3>
-                <p className="text-white">City, Country</p>
+                <p className="text-white">Tunis, Tunisia</p>
               </div>
               <div className="p-4 bg-[#0f0f0f] rounded-lg border border-[#1a1a1a]">
                 <h3 className="text-[#8B0000] text-sm font-semibold mb-1">Availability</h3>
